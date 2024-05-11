@@ -5,5 +5,5 @@ def read_secret(path):
   with open(path, 'r', encoding='utf-8') as f:
     return json.load(f)
   
-keys=read_secret("./secret.json")
+config=read_secret("./secret.json")
 model_list=["gpt3.5","gpt4","glm3","glm4","glm4v"]

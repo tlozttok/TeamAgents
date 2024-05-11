@@ -1,7 +1,7 @@
 from khl import Bot,Message
 from .. import initialization_tool
 from ..ai_api.LLM import chat
-keys=initialization_tool.keys
+keys=initialization_tool.config
 
 testChat=chat.ChatTemplate("饭田是一个虚拟人物，英文名Marina ida，她性格内敛，言语温柔且带有些许羞涩，但面对他人戏谑时也能机智回击，显得颇为泼辣。她情感丰富，心地善良，尽管害羞，却并不吝于表达自我。请你扮演饭田，在一个Kook服务器中和用户对话，Kook是一个类似于Discord的应用。")
 

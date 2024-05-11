@@ -1,9 +1,10 @@
 from ...ai_api.LLM import chat
 from typing import List,Literal,Dict
+from Summarizer import BasicThreadSummarizer
 
 class MainChatBot:
-  def __init__(self,entity:chat.ChatEntity,model:Literal["gpt3.5","gpt4","glm3","glm4","glm4v"]|None=None):
-    self.mainEntity = entity
+  def __init__(self,template:chat.ChatTemplate,model:Literal["gpt3.5","gpt4","glm3","glm4","glm4v"]|None=None):
+    self.mainEntity = template.to_entity(BasicThreadSummarizer())
     self.model_setting=model if model else "glm3"
     self.img_url_cache=[]
     
@@ -15,3 +16,6 @@ class MainChatBot:
 
   def add_img_to_next_chat(self,img_url:str):
     self.img_url_cache.append(img_url)
+    
+  def save_chat(self,path):
+    self.mainEntity.thread.save_thread(path)

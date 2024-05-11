@@ -4,7 +4,7 @@ from ..ai_api.LLM import chat
 from ..agent.chat_group import main_chatbot as mc
 from dataclasses import dataclass, field
 from typing import List,Literal,Dict
-keys=initialization_tool.keys
+keys=initialization_tool.config
 
 @dataclass
 class usage():
@@ -66,7 +66,7 @@ class KookChatBot():
         return
       elif len(args)>=1:
         self.users_information[user_id].model=args[0]
-      chatbot=mc.MainChatBot(self.template.to_entity(),self.users_information[user_id].model)
+      chatbot=mc.MainChatBot(self.template,self.users_information[user_id].model)
       self.user_bot[user_id]=chatbot
       await msg.reply("对话创建成功❤️")
   
