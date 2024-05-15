@@ -7,9 +7,9 @@ from typing import List,Literal,Dict
 keys=initialization_tool.config
 
 
-model_name={"gpt3.5":"gpt-3.5-turbo","gpt4":"gpt-4-turbo","glm3":"glm-3-turbo","glm4":"glm-4","glm4v":"glm-4v","e3l":"text-embedding-3-large","e3s":"text-embedding-3-small","ze2":"embedding-2"}
+model_name={"gpt3.5":"gpt-3.5-turbo","gpt4o":"gpt-4o","glm3":"glm-3-turbo","glm4":"glm-4","glm4v":"glm-4v","e3l":"text-embedding-3-large","e3s":"text-embedding-3-small","ze2":"embedding-2"}
 
-oa_model=["gpt-3.5-turbo","gpt-4-turbo","text-embedding-3-large","text-embedding-3-small"]
+oa_model=["gpt-3.5-turbo","gpt-4o","text-embedding-3-large","text-embedding-3-small"]
 zp_model=["glm-3-turbo","glm-4","glm-4v","embedding-2"]
 
 class MainClient():

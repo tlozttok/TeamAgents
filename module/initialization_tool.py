@@ -6,4 +6,4 @@ def read_secret(path):
     return json.load(f)
   
 config=read_secret("./secret.json")
-model_list=["gpt3.5","gpt4","glm3","glm4","glm4v"]
+model_list=["gpt3.5","gpt4o","glm3","glm4","glm4v"]

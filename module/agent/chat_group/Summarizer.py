@@ -2,6 +2,7 @@ from module.ai_api.LLM.chat import ThreadMetaData
 from ...ai_api.Embedding.embedding import Embedding
 from ...ai_api.LLM.chat import ThreadSummarizerBase,ChatTemplate
 import time
+import re
 import json
 
 class BasicThreadSummarizer(ThreadSummarizerBase):
@@ -17,9 +18,10 @@ class BasicThreadSummarizer(ThreadSummarizerBase):
     title = self.titleTemplate(full_msg,self.chat_model).choices[0].message.content
     summary = self.summarizer(full_msg,self.chat_model).choices[0].message.content
     keywords = self.keywordTemplate(full_msg,self.chat_model).choices[0].message.content
-    title=json.loads(title)["title"]
-    summary=json.loads(summary)["summary"]
-    keywords=json.loads(keywords)["keywords"]
+    json_re=re.compile(r"\{.*\}")
+    title=json.loads(json_re.findall(title)[0])["title"]
+    summary=json.loads(json_re.findall(summary)[0])["summary"]
+    keywords=json.loads(json_re.findall(keywords)[0])["keywords"]
     timestamp=int(time.time())
     embedding=Embedding().get_embedding(full_msg,self.embedding_model)
     metadata=ThreadMetaData(timestamp,title,summary,keywords,embedding)

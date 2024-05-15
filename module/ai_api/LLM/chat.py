@@ -12,7 +12,7 @@ client_zp=openai.Client(api_key=keys["zhipu_key"],base_url="https://open.bigmode
 #客户端要统一
 
 
-model_name={"gpt3.5":"gpt-3.5-turbo","gpt4":"gpt-4-turbo","glm3":"glm-3-turbo","glm4":"glm-4","glm4v":"glm-4v","e3l":"text-embedding-3-large","e3s":"text-embedding-3-small","ze2":"embedding-2"}
+model_name={"gpt3.5":"gpt-3.5-turbo","gpt4o":"gpt-4o","glm3":"glm-3-turbo","glm4":"glm-4","glm4v":"glm-4v","e3l":"text-embedding-3-large","e3s":"text-embedding-3-small","ze2":"embedding-2"}
 
 @dataclass
 class ThreadMetaData:
@@ -21,6 +21,7 @@ class ThreadMetaData:
   summary:str
   key_words:List[str]
   embedding:List[float]
+  
   
   def to_dict(self):
     return {
@@ -45,7 +46,7 @@ class ChatTemplate:
     self.response_format={"type": "json_object"} if json_response else None
     self._tools=[]
   
-  def __call__(self, message:str, model:Literal["gpt3.5","gpt4","glm3","glm4","glm4v"]="glm3"):
+  def __call__(self, message:str, model:Literal["gpt3.5","gpt4o","glm3","glm4","glm4v"]="glm3"):
     messages=[{"role":"system","content":self.system_prompt},{"role":"user","content":message}]   
     tools=[tool.to_dict() for tool in self.additional_tools+self._tools]
     completion=main_client.chat(
@@ -107,7 +108,7 @@ class ChatEntity:
     self.template=template
     self.thread=thread
   
-  def __call__(self, message:str, model:Literal["gpt3.5","gpt4","glm3","glm4","glm4v"]="glm3", img_url:List[str]=[]):
+  def __call__(self, message:str, model:Literal["gpt3.5","gpt4o","glm3","glm4","glm4v"]="glm3", img_url:List[str]=[]):
     if img_url:
       self.thread.create_vision_message(message, img_url)
     else:
@@ -123,6 +124,7 @@ class ChatEntity:
       max_tokens=self.template.max_tokens,
       tools=tools if len(tools)>0 else None
     )
+    self.thread.add_message(completion.choices[0].message.content)
     return completion
   
   def change_thread(self,thread:ChatThread):
