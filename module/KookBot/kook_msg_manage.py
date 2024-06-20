@@ -70,23 +70,23 @@ class MsgLayer:
         @self.bot.on_message()
         # 以后可以加上检测是否是回复机器人的功能
         async def receive_single_chat_message(msg: Message):
-            if msg.author.id in self.user_state and not msg.content.startswith("-"):
+            if msg.author.id in self.user_state and not msg.content.startswith("/"):
                 # 取消用来终止对话的任务
                 self.user_state[msg.author.id][1].cancel()
                 # 获取回复
                 reply = self.backend.send_message(msg.author.id, msg.content)
                 await msg.reply(reply)
                 # 重新创建用来终止对话的任务
-                self.user_state[msg.author.id] = self.user_state[msg.author_id], asyncio.create_task(
-                    self._end_single_chat(msg.author, msg, self.user_state[msg.author.id][2])), self.user_state[msg.author_id][2]
+                self.user_state[msg.author.id] = self.user_state[msg.author.id][0], asyncio.create_task(
+                    self._end_single_chat(msg.author, msg, self.user_state[msg.author.id][2])), self.user_state[msg.author.id][2]
 
     def _reg_end_single_chat(self):
         @self.bot.command(name="end", aliases=["结束", "e"])
         async def end_single_chat(msg: Message):
             if msg.author.id in self.user_state:
                 self.user_state[msg.author.id][1].cancel()
-                self.backend.end_single_chat(msg.author_id)
-                self.user_state.pop(msg.author_id)
+                self.backend.end_single_chat(msg.author.id)
+                self.user_state.pop(msg.author.id)
                 await msg.reply("对话结束")
 
     def run(self):
