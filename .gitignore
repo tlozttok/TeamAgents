@@ -2,3 +2,4 @@ secret.json
 /file
 **/__pycache__
 /playground
+*.pyc

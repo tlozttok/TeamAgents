@@ -78,9 +78,11 @@ class ChatThread:
         self.messages.append({"role": role, "content": message})
 
     def create_vision_message(self, message: str, img_url: List[str]):
-        msg_list = [{"type": "text", "text": message}]
+        msg_list = []
         for img in img_url:
-            msg_list.append({"type": "image", "image": img})
+            msg_list.append({"type": "image_url", "image_url": {
+                            "url": img}})
+        msg_list.append({"type": "text", "text": message})
         self.messages.append({"role": "user", "content": msg_list})
 
     def full_chat_str(self) -> str:
@@ -103,6 +105,14 @@ class ChatThread:
             data = json.loads(f.read())
             self.messages = data["messages"]
             self.meta_data = ThreadMetaData(**data["meta_data"])
+
+    @property
+    def first_user_message(self) -> str:
+        content = self.messages[0]["content"]
+        if isinstance(content, list):
+            return content[-1]["text"]
+        else:
+            return self.messages[0]["content"]
 
 
 class ChatEntity:

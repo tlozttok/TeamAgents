@@ -15,7 +15,7 @@ class CommonChatBot:
     input_token: int
     reply_token: int
 
-    def __init__(self, template: chat.ChatTemplate, model: models.ModelType = models.ModelType.GLM4):
+    def __init__(self, template: chat.ChatTemplate, model: models.ModelType = models.ModelType.GLM4V):
         self.mainEntity = template.to_entity(BasicThreadSummarizer())
         self.model_setting = model
         self.img_url_cache = []
@@ -39,6 +39,8 @@ class CommonChatBot:
         self.mainEntity.thread = new_thread
 
     def end_current_chat(self):
+        if len(self.activate_thread.messages) == 0:
+            self.threads.remove(self.activate_thread)
         self.activate_thread = None
         self.mainEntity.thread = None
 
@@ -56,8 +58,10 @@ class CommonChatBot:
         self.activate_thread = self.threads[chat_id]
 
     def get_chat_list(self) -> List[str]:
-        # 用第一个用户消息做标识符吧，可以搞一个卡片消息
-        ...
+        chat_list = []
+        for thread in self.threads:
+            chat_list.append(thread.first_user_message)
+        return chat_list
 
     def send_message(self, message: str):
         reply = self.mainEntity(

@@ -70,14 +70,14 @@ class BotMarina():
     def end_single_chat(self, user_id: int):
         self.user_bot[user_id].end_current_chat()
 
-    def change_chat(self, user_id: int, chat_temp_id: int):
-        ...
+    def change_chat(self, user_id: int, chat_id: int):
+        self.user_bot[user_id].change_chat(chat_id)
 
     def get_chat_list(self, user_id: int):
-        ...
+        return self.user_bot[user_id].get_chat_list()
 
     def _chat_once_reg(self):
-        @self.bot.command(regex=r"(?i)^((?:饭田|Marina)[,，].+)")
+        @ self.bot.command(regex=r"(?i)^((?:饭田|Marina)[,，].+)")
         async def chat_once(msg: Message, content: str):
             if not self.users_information.get(msg.author_id):
                 await self._reg_user_with_msg(msg, "glm4")
