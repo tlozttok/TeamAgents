@@ -6,6 +6,7 @@ from ..agent.chat_group import main_chatbot as mc
 from dataclasses import dataclass, field
 from typing import List, Literal, Dict, Tuple
 from ..ai_api.LLM.models import ModelType
+import os
 
 keys = initialization_tool.config
 
@@ -38,13 +39,19 @@ class BotMarina():
     chatbot: mc.CommonChatBot
     template: chat.ChatTemplate
     user_bot: Dict[int, mc.CommonChatBot]
+    file_path: str
 
-    def __init__(self, chat_template: chat.ChatTemplate):
+    def __init__(self, chat_template: chat.ChatTemplate, file_path: str = None):
         self.template = chat_template
         self.user_bot = {}
+        self.file_path = file_path if file_path else keys["chat_save_path"]
 
     def register_user(self, user_id: int):
-        self.user_bot[user_id] = mc.CommonChatBot(self.template)
+        # 根据用户id创建储存该用户对话记录的路径
+        user_path = os.path.join(self.file_path, str(user_id), "")
+        os.makedirs(user_path, exist_ok=True)
+
+        self.user_bot[user_id] = mc.CommonChatBot(self.template, user_path)
 
     def chat_once(self, content: str, model: ModelType = ModelType.GLM4) -> str:
         return self.template(content, model).choices[0].message.content
@@ -76,6 +83,9 @@ class BotMarina():
     def get_chat_list(self, user_id: int):
         return self.user_bot[user_id].get_chat_list()
 
+    def save_all(self):
+        for user_id in self.user_bot:
+            self.user_bot[user_id].save_all_chat()
     def _chat_once_reg(self):
         @ self.bot.command(regex=r"(?i)^((?:饭田|Marina)[,，].+)")
         async def chat_once(msg: Message, content: str):

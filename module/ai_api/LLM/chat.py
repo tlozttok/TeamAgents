@@ -4,7 +4,7 @@ import zhipuai
 import openai
 from ..Client.client import main_client
 from ... import initialization_tool
-from typing import List, Literal, Dict
+from typing import Callable, List, Literal, Dict
 from .models import ModelType
 keys = initialization_tool.config
 
@@ -35,6 +35,11 @@ class ThreadMetaData:
 
 class ThreadSummarizerBase:
     def summarize(self, full_msg: str) -> ThreadMetaData:
+        raise NotImplementedError
+
+
+class ThreadMetadataComparerBase:
+    def compare(self, thread1: ThreadMetaData, thread2: ThreadMetaData):
         raise NotImplementedError
 
 
@@ -74,7 +79,7 @@ class ChatThread:
         self.meta_data = None
         self.summarizer = summarizer if summarizer else ThreadSummarizerBase()
 
-    def add_message(self, message: str | List[Dict], role: Literal["system", "user"] = "user"):
+    def add_message(self, message: str | List[Dict], role: Literal["assistant", "user"] = "user"):
         self.messages.append({"role": role, "content": message})
 
     def create_vision_message(self, message: str, img_url: List[str]):
@@ -96,15 +101,20 @@ class ChatThread:
 
     def save_thread(self, file_path: str):
         self.meta_data = self.summarizer.summarize(self.full_chat_str())
-        with open(file_path, "w") as f:
+        with open(file_path, "a") as f:
+            f.write("\n")
             f.write(json.dumps({"messages": self.messages,
                     "meta_data": self.meta_data.to_dict()}))
 
-    def load_thread(self, file_path: str):
-        with open(file_path, "r") as f:
-            data = json.loads(f.read())
-            self.messages = data["messages"]
-            self.meta_data = ThreadMetaData(**data["meta_data"])
+    def thread_save_data(self) -> str:
+        self.meta_data = self.summarizer.summarize(self.full_chat_str())
+        return json.dumps({"messages": self.messages,
+                           "meta_data": self.meta_data.to_dict()})
+
+    def load_thread_data(self, data: str):
+        t_data = json.loads(data)
+        self.messages = t_data["messages"]
+        self.meta_data = ThreadMetaData(**t_data["meta_data"])
 
     @property
     def first_user_message(self) -> str:
@@ -138,5 +148,48 @@ class ChatEntity:
             max_tokens=self.template.max_tokens,
             tools=tools if len(tools) > 0 else None
         )
-        self.thread.add_message(completion.choices[0].message.content)
+        self.thread.add_message(
+            completion.choices[0].message.content, "assistant")
         return completion
+
+
+class ToolParameter:
+    def __init__(self, name: str, description: str, type: str, required: bool = True) -> None:
+        self.name = name
+        self.description = description
+        self.type = type
+
+
+class Tool:
+    name: str
+    description: str
+    parameters: List[ToolParameter]
+    required: List[str]
+    function: Callable[[str], str]
+
+    def __init__(self, name: str, description: str, function: Callable[[str], str]) -> None:
+        self.name = name
+        self.description = description
+        self.parameters = []
+        self.required = []
+        self.function = function
+
+    def to_dict(self) -> Dict:
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        param.name: {
+                            "type": param.type,
+                            "description": param.description
+                        }
+                        for param in self.parameters
+                    },
+                    "required": self.required
+                }
+            }
+        }

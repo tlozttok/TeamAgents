@@ -2,6 +2,7 @@ from ...ai_api.LLM import chat, models
 from typing import List, Literal, Dict
 from .Summarizer import BasicThreadSummarizer
 from ...initialization_tool import config
+from ...initialization_tool import today
 
 
 class CommonChatBot:
@@ -15,12 +16,14 @@ class CommonChatBot:
     input_token: int
     reply_token: int
 
-    def __init__(self, template: chat.ChatTemplate, model: models.ModelType = models.ModelType.GLM4V):
+    def __init__(self, template: chat.ChatTemplate, thread_save_path: str = None, model: models.ModelType = models.ModelType.GLM4AIR):
         self.mainEntity = template.to_entity(BasicThreadSummarizer())
         self.model_setting = model
         self.img_url_cache = []
         self.threads = []
-        self.thread_save_path = config["chat_save_path"]
+        self.thread_save_path = thread_save_path+"/"+today + \
+            ".txt" if thread_save_path else config["chat_save_path"] + \
+            "/"+today+".json"
         self.activate_thread = self.mainEntity.thread
         self.input_token = 0
         self.reply_token = 0
@@ -39,23 +42,39 @@ class CommonChatBot:
         self.mainEntity.thread = new_thread
 
     def end_current_chat(self):
-        if len(self.activate_thread.messages) == 0:
+        if self.activate_thread and len(self.activate_thread.messages) == 0:
             self.threads.remove(self.activate_thread)
         self.activate_thread = None
         self.mainEntity.thread = None
 
-    def save_chat(self, chat_id: int):
+    def save_chat(self, chat_id: int, fileIO=None):
         thread = self.threads[chat_id]
-        thread.save_thread(self.thread_save_path)
+        chat_data = thread.thread_save_data()
+        if fileIO:
+            fileIO.write(chat_data)
+        else:
+            with open(self.thread_save_path, "a") as f:
+                f.write(chat_data)
+                f.write("\n")
         self.threads.remove(thread)
 
     def save_all_chat(self):
-        for thread in self.threads:
-            thread.save_thread(self.thread_save_path)
-            self.threads.remove(thread)
+        self.end_current_chat()
+        with open(self.thread_save_path, "a") as f:
+            for thread in self.threads:
+                chat_data = thread.thread_save_data()
+                f.write(chat_data)
+
+    def load_data_from_file(self, fileIO=None):
+        if fileIO:
+            chat_data = fileIO.read()
+        else:
+            with open(self.thread_save_path, "r") as f:
+                chat_data = f.read()
 
     def change_chat(self, chat_id: int):
         self.activate_thread = self.threads[chat_id]
+        self.mainEntity.thread = self.activate_thread
 
     def get_chat_list(self) -> List[str]:
         chat_list = []
