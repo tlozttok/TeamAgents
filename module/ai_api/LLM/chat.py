@@ -15,6 +15,48 @@ client_zp = openai.Client(
 # 客户端要统一
 
 
+class ToolParameter:
+    def __init__(self, name: str, description: str, type: str, required: bool = True) -> None:
+        self.name = name
+        self.description = description
+        self.type = type
+
+
+class Tool:
+    name: str
+    description: str
+    parameters: List[ToolParameter]
+    required: List[str]
+    function: Callable[[str], str]
+
+    def __init__(self, name: str, description: str, function: Callable[[str], str]) -> None:
+        self.name = name
+        self.description = description
+        self.parameters = []
+        self.required = []
+        self.function = function
+
+    def to_dict(self) -> Dict:
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        param.name: {
+                            "type": param.type,
+                            "description": param.description
+                        }
+                        for param in self.parameters
+                    },
+                    "required": self.required
+                }
+            }
+        }
+
+
 @dataclass
 class ThreadMetaData:
     time: int
@@ -151,45 +193,3 @@ class ChatEntity:
         self.thread.add_message(
             completion.choices[0].message.content, "assistant")
         return completion
-
-
-class ToolParameter:
-    def __init__(self, name: str, description: str, type: str, required: bool = True) -> None:
-        self.name = name
-        self.description = description
-        self.type = type
-
-
-class Tool:
-    name: str
-    description: str
-    parameters: List[ToolParameter]
-    required: List[str]
-    function: Callable[[str], str]
-
-    def __init__(self, name: str, description: str, function: Callable[[str], str]) -> None:
-        self.name = name
-        self.description = description
-        self.parameters = []
-        self.required = []
-        self.function = function
-
-    def to_dict(self) -> Dict:
-        return {
-            "type": "function",
-            "function": {
-                "name": self.name,
-                "description": self.description,
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        param.name: {
-                            "type": param.type,
-                            "description": param.description
-                        }
-                        for param in self.parameters
-                    },
-                    "required": self.required
-                }
-            }
-        }
