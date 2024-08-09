@@ -4,7 +4,7 @@ import zhipuai
 import openai
 from ..Client.client import main_client
 from ... import initialization_tool
-from typing import Callable, List, Literal, Dict
+from typing import Any, Callable, List, Literal, Dict
 from .models import ModelType
 keys = initialization_tool.config
 
@@ -27,7 +27,7 @@ class Tool:
     description: str
     parameters: List[ToolParameter]
     required: List[str]
-    function: Callable[[str], str]
+    function: Callable[[Any,], dict]
 
     def __init__(self, name: str, description: str, function: Callable[[str], str]) -> None:
         self.name = name
@@ -55,6 +55,12 @@ class Tool:
                 }
             }
         }
+
+    def call(self,para:str):
+        para_dict=json.loads(para)
+        result=self.function(**para_dict)
+        return json.dumps(result)
+
 
 
 @dataclass
@@ -96,19 +102,38 @@ class ChatTemplate:
             "type": "json_object"} if json_response else None
         self._tools = []
 
+    def call_functions(self, completion):
+        calls=completion.choices[0].message.tool_calls
+        result_message=[]
+        for call in calls:
+            args=call.function.arguments
+            name=call.function.name
+            for function in self._tools+self.additional_tools:
+                if function.name==name:
+                    result=function.call(args)
+                    result_message.append({"role": "tool", "tool_call_id": completion.choices[0].message.tool_calls[0].id,
+                             "content": result})
+        return result_message
+
     def __call__(self, message: str, model: ModelType = ModelType.GLM4):
+        done=False
         messages = [{"role": "system", "content": self.system_prompt}, {
             "role": "user", "content": message}]
         tools = [tool.to_dict() for tool in self.additional_tools+self._tools]
-        completion = main_client.chat(
-            messages=messages,
-            model=model,
-            response_format=self.response_format,
-            temperature=self.temp,
-            top_p=self.top_p,
-            max_tokens=self.max_tokens,
-            tools=tools if len(tools) > 0 else None
-        )
+        while not done:
+            completion = main_client.chat(
+                messages=messages,
+                model=model,
+                response_format=self.response_format,
+                temperature=self.temp,
+                top_p=self.top_p,
+                max_tokens=self.max_tokens,
+                tools=tools if len(tools) > 0 else None
+            )
+            if completion.choices[0].finish_reason=="tool_calls":
+                messages+=self.call_functions(completion)
+            else:
+                done=True
         return completion
 
     def to_entity(self, summarizer: ThreadSummarizerBase = None):
